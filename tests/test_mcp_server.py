@@ -135,17 +135,9 @@ async def test_list_tables_basic(mcp_server, setup_test_database):
         # Check table details
         for table in tables:
             assert table["database"] == test_db
-            assert "columns" in table
             assert "total_rows" in table
             assert "engine" in table
             assert "comment" in table
-
-            # Verify column information exists
-            assert len(table["columns"]) > 0
-            for column in table["columns"]:
-                assert "name" in column
-                assert "column_type" in column
-                assert "comment" in column
 
 
 @pytest.mark.asyncio
@@ -308,22 +300,6 @@ async def test_table_metadata_details(mcp_server, setup_test_database):
 
         # Check row count
         assert test_table_info["total_rows"] == 4
-
-        # Check columns and their comments
-        columns_by_name = {col["name"]: col for col in test_table_info["columns"]}
-
-        assert columns_by_name["id"]["comment"] == "Primary identifier"
-        assert columns_by_name["id"]["column_type"] == "UInt32"
-
-        assert columns_by_name["name"]["comment"] == "User name field"
-        assert columns_by_name["name"]["column_type"] == "String"
-
-        assert columns_by_name["age"]["comment"] == "User age"
-        assert columns_by_name["age"]["column_type"] == "UInt8"
-
-        assert columns_by_name["created_at"]["comment"] == "Record creation timestamp"
-        assert columns_by_name["created_at"]["column_type"] == "DateTime"
-        assert columns_by_name["created_at"]["default_expression"] == "now()"
 
 
 @pytest.mark.asyncio

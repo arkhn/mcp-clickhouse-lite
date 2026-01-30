@@ -156,15 +156,13 @@ class TestPagination(unittest.TestCase):
         for table in tables:
             self.assertIsInstance(table, Table)
             self.assertEqual(table.database, self.test_db)
-            self.assertIsInstance(table.columns, list)
 
-        token = create_page_token(self.test_db, None, None, table_names, 3, True)
+        token = create_page_token(self.test_db, None, None, table_names, 3)
         self.assertIn(token, table_pagination_cache)
         cached_state = table_pagination_cache[token]
         self.assertEqual(cached_state["database"], self.test_db)
         self.assertEqual(cached_state["start_idx"], 3)
         self.assertEqual(cached_state["table_names"], table_names)
-        self.assertEqual(cached_state["include_detailed_columns"], True)
 
     def test_filters_with_pagination(self):
         """Test pagination with LIKE and NOT LIKE filters."""
@@ -181,77 +179,6 @@ class TestPagination(unittest.TestCase):
         result3 = list_tables(self.test_db, not_like="test_table_1%", page_size=10)
         self.assertEqual(len(result3["tables"]), 8)
         self.assertIsNone(result3["next_page_token"])
-
-    def test_metadata_trimming(self):
-        """Test that include_detailed_columns parameter works correctly."""
-        result_with_columns = list_tables(self.test_db, page_size=3, include_detailed_columns=True)
-        self.assertIsInstance(result_with_columns, dict)
-        self.assertIn("tables", result_with_columns)
-
-        tables_with_columns = result_with_columns["tables"]
-        self.assertEqual(len(tables_with_columns), 3)
-
-        for table in tables_with_columns:
-            self.assertIn("columns", table)
-            self.assertIsInstance(table["columns"], list)
-            self.assertGreater(len(table["columns"]), 0)
-            for col in table["columns"]:
-                self.assertIn("name", col)
-                self.assertIn("column_type", col)
-
-        result_without_columns = list_tables(
-            self.test_db, page_size=3, include_detailed_columns=False
-        )
-        self.assertIsInstance(result_without_columns, dict)
-        self.assertIn("tables", result_without_columns)
-
-        tables_without_columns = result_without_columns["tables"]
-        self.assertEqual(len(tables_without_columns), 3)
-
-        for table in tables_without_columns:
-            self.assertIn("columns", table)
-            self.assertIsInstance(table["columns"], list)
-            self.assertEqual(len(table["columns"]), 0)
-            self.assertIn("create_table_query", table)
-            self.assertIsInstance(table["create_table_query"], str)
-            self.assertGreater(len(table["create_table_query"]), 0)
-
-    def test_metadata_trimming_with_pagination(self):
-        """Test that metadata trimming works across multiple pages."""
-        result1 = list_tables(self.test_db, page_size=3, include_detailed_columns=False)
-        self.assertEqual(len(result1["tables"]), 3)
-        self.assertIsNotNone(result1["next_page_token"])
-
-        for table in result1["tables"]:
-            self.assertEqual(len(table["columns"]), 0)
-
-        result2 = list_tables(
-            self.test_db,
-            page_token=result1["next_page_token"],
-            page_size=3,
-            include_detailed_columns=False,
-        )
-        self.assertEqual(len(result2["tables"]), 3)
-
-        for table in result2["tables"]:
-            self.assertEqual(len(table["columns"]), 0)
-
-    def test_metadata_setting_mismatch_resets_pagination(self):
-        """Test that changing include_detailed_columns invalidates page token."""
-        result1 = list_tables(self.test_db, page_size=3, include_detailed_columns=True)
-        page_token = result1["next_page_token"]
-
-        result2 = list_tables(
-            self.test_db,
-            page_token=page_token,
-            page_size=3,
-            include_detailed_columns=False,
-        )
-
-        self.assertEqual(len(result2["tables"]), 3)
-        table_names_1 = [t["name"] for t in result1["tables"]]
-        table_names_2 = [t["name"] for t in result2["tables"]]
-        self.assertEqual(table_names_1, table_names_2)
 
 
 if __name__ == "__main__":

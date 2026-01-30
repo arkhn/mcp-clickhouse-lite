@@ -25,17 +25,6 @@ from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
 
 @dataclass
-class Column:
-    database: str
-    table: str
-    name: str
-    column_type: str
-    default_kind: Optional[str]
-    default_expression: Optional[str]
-    comment: Optional[str]
-
-
-@dataclass
 class Table:
     database: str
     name: str
@@ -53,7 +42,6 @@ class Table:
     active_parts: int
     total_marks: int
     comment: Optional[str] = None
-    columns: List[Column] = field(default_factory=list)
 
 
 MCP_SERVER_NAME = "mcp-clickhouse-lite"
@@ -142,10 +130,6 @@ def result_to_table(query_columns, result) -> List[Table]:
     return [Table(**dict(zip(query_columns, row))) for row in result]
 
 
-def result_to_column(query_columns, result) -> List[Column]:
-    return [Column(**dict(zip(query_columns, row))) for row in result]
-
-
 def to_json(obj: Any) -> str:
     if is_dataclass(obj):
         return json.dumps(asdict(obj), default=to_json)
@@ -212,7 +196,6 @@ def get_paginated_table_data(
     table_names: List[str],
     start_idx: int,
     page_size: int,
-    include_detailed_columns: bool = True,
 ) -> tuple[List[Table], int, bool]:
     """Get detailed information for a page of tables.
 
@@ -222,7 +205,6 @@ def get_paginated_table_data(
         table_names: List of all table names to paginate
         start_idx: Starting index for pagination
         page_size: Number of tables per page
-        include_detailed_columns: Whether to include detailed column metadata (default: True)
 
     Returns:
         Tuple of (list of Table objects, end index, has more pages)
@@ -245,23 +227,6 @@ def get_paginated_table_data(
     result = client.query(query)
     tables = result_to_table(result.column_names, result.result_rows)
 
-    if include_detailed_columns:
-        for table in tables:
-            column_data_query = f"""
-                SELECT database, table, name, type AS column_type, default_kind, default_expression, comment
-                FROM system.columns
-                WHERE database = {format_query_value(database)}
-                AND table = {format_query_value(table.name)}
-            """
-            column_data_query_result = client.query(column_data_query)
-            table.columns = result_to_column(
-                column_data_query_result.column_names,
-                column_data_query_result.result_rows,
-            )
-    else:
-        for table in tables:
-            table.columns = []
-
     return tables, end_idx, end_idx < len(table_names)
 
 
@@ -271,7 +236,6 @@ def create_page_token(
     not_like: Optional[str],
     table_names: List[str],
     end_idx: int,
-    include_detailed_columns: bool,
 ) -> str:
     """Create a new page token and store it in the cache.
 
@@ -281,7 +245,6 @@ def create_page_token(
         not_like: NOT LIKE pattern used to filter tables
         table_names: List of all table names
         end_idx: Index to start from for the next page
-        include_detailed_columns: Whether to include detailed column metadata
 
     Returns:
         New page token
@@ -293,7 +256,6 @@ def create_page_token(
         "not_like": not_like,
         "table_names": table_names,
         "start_idx": end_idx,
-        "include_detailed_columns": include_detailed_columns,
     }
     return token
 
@@ -304,7 +266,6 @@ def list_tables(
     not_like: Optional[str] = None,
     page_token: Optional[str] = None,
     page_size: int = 50,
-    include_detailed_columns: bool = True,
 ) -> Dict[str, Any]:
     """List available ClickHouse tables in a database, including schema, comment,
     row count, and column count.
@@ -315,9 +276,6 @@ def list_tables(
         not_like: Optional NOT LIKE pattern to exclude table names
         page_token: Token for pagination, obtained from a previous call
         page_size: Number of tables to return per page (default: 50)
-        include_detailed_columns: Whether to include detailed column metadata (default: True).
-            When False, the columns array will be empty but create_table_query still contains
-            all column information. This reduces payload size for large schemas.
 
     Returns:
         A dictionary containing:
@@ -327,25 +285,22 @@ def list_tables(
     """
     logger.info(
         "Listing tables in database '%s' with like=%s, not_like=%s, "
-        "page_token=%s, page_size=%s, include_detailed_columns=%s",
+        "page_token=%s, page_size=%s",
         database,
         like,
         not_like,
         page_token,
         page_size,
-        include_detailed_columns,
     )
     client = create_clickhouse_client()
 
     if page_token and page_token in table_pagination_cache:
         cached_state = table_pagination_cache[page_token]
-        cached_include_detailed = cached_state.get("include_detailed_columns", True)
 
         if (
             cached_state["database"] != database
             or cached_state["like"] != like
             or cached_state["not_like"] != not_like
-            or cached_include_detailed != include_detailed_columns
         ):
             logger.warning(
                 "Page token %s is for a different database, filter, or metadata setting. "
@@ -363,13 +318,12 @@ def list_tables(
                 table_names,
                 start_idx,
                 page_size,
-                include_detailed_columns,
             )
 
             next_page_token = None
             if has_more:
                 next_page_token = create_page_token(
-                    database, like, not_like, table_names, end_idx, include_detailed_columns
+                    database, like, not_like, table_names, end_idx
                 )
 
             del table_pagination_cache[page_token]
@@ -395,13 +349,12 @@ def list_tables(
         table_names,
         start_idx,
         page_size,
-        include_detailed_columns,
     )
 
     next_page_token = None
     if has_more:
         next_page_token = create_page_token(
-            database, like, not_like, table_names, end_idx, include_detailed_columns
+            database, like, not_like, table_names, end_idx
         )
 
     logger.info(

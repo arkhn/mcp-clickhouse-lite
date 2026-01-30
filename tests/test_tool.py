@@ -85,8 +85,8 @@ class TestClickhouseTools(unittest.TestCase):
 
         self.assertIn("Query execution failed", str(context.exception))
 
-    def test_table_and_column_comments(self):
-        """Test that table and column comments are correctly retrieved."""
+    def test_table_comments(self):
+        """Test that table comments are correctly retrieved."""
         result = list_tables(self.test_db)
         self.assertIsInstance(result, dict)
         self.assertIn("tables", result)
@@ -96,13 +96,6 @@ class TestClickhouseTools(unittest.TestCase):
         table_info = tables[0]
         # Verify table comment
         self.assertEqual(table_info["comment"], "Test table for unit testing")
-
-        # Get columns by name for easier testing
-        columns = {col["name"]: col for col in table_info["columns"]}
-
-        # Verify column comments
-        self.assertEqual(columns["id"]["comment"], "Primary identifier")
-        self.assertEqual(columns["name"]["comment"], "User name field")
 
     def test_list_tables_empty_database(self):
         """Test listing tables in an empty database returns empty list without errors."""
