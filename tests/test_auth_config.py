@@ -1,6 +1,6 @@
 import pytest
 
-from mcp_clickhouse.mcp_env import MCPServerConfig
+from mcp_clickhouse_lite.mcp_env import MCPServerConfig
 
 
 def test_auth_token_configuration(monkeypatch: pytest.MonkeyPatch):

@@ -4,7 +4,7 @@ import json
 from dotenv import load_dotenv
 from fastmcp.exceptions import ToolError
 
-from mcp_clickhouse import create_clickhouse_client, list_databases, list_tables, run_select_query
+from mcp_clickhouse_lite import create_clickhouse_client, list_databases, list_tables, run_select_query
 
 load_dotenv()
 

@@ -61,13 +61,13 @@ jobs:
           context: .
           push: false
           load: true
-          tags: mcp-clickhouse:test
+          tags: mcp-clickhouse-lite:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Test Docker image import
         run: |
-          docker run --rm mcp-clickhouse:test python -c "import mcp_clickhouse; print('✅ MCP ClickHouse Docker image works!')"
+          docker run --rm mcp-clickhouse-lite:test python -c "import mcp_clickhouse_lite; print('✅ MCP ClickHouse Docker image works!')"
 
       - name: Test Docker image default command
         run: |
@@ -75,4 +75,4 @@ jobs:
             -e CLICKHOUSE_HOST=localhost \
             -e CLICKHOUSE_USER=default \
             -e CLICKHOUSE_PASSWORD="" \
-            mcp-clickhouse:test || [ $? = 124 ] && echo "✅ Docker container starts successfully"
+            mcp-clickhouse-lite:test || [ $? = 124 ] && echo "✅ Docker container starts successfully"

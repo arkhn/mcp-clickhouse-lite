@@ -1,6 +1,6 @@
 import pytest
 
-from mcp_clickhouse.mcp_env import ClickHouseConfig
+from mcp_clickhouse_lite.mcp_env import ClickHouseConfig
 
 
 def test_interface_http_when_secure_false(monkeypatch: pytest.MonkeyPatch):

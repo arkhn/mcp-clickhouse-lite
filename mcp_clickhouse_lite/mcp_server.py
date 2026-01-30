@@ -19,8 +19,8 @@ from dataclasses import dataclass, field, asdict, is_dataclass
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
-from mcp_clickhouse.mcp_env import get_config, get_chdb_config, get_mcp_config, TransportType
-from mcp_clickhouse.chdb_prompt import CHDB_PROMPT
+from mcp_clickhouse_lite.mcp_env import get_config, get_chdb_config, get_mcp_config, TransportType
+from mcp_clickhouse_lite.chdb_prompt import CHDB_PROMPT
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
 
@@ -56,7 +56,7 @@ class Table:
     columns: List[Column] = field(default_factory=list)
 
 
-MCP_SERVER_NAME = "mcp-clickhouse"
+MCP_SERVER_NAME = "mcp-clickhouse-lite"
 
 # Configure logging
 logging.basicConfig(

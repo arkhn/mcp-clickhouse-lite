@@ -74,7 +74,7 @@ When using HTTP or SSE transport, authentication is **required by default**. The
    ```json
    {
      "mcpServers": {
-       "mcp-clickhouse": {
+       "mcp-clickhouse-lite": {
          "url": "http://127.0.0.1:8000",
          "headers": {
            "Authorization": "Bearer your-generated-token"
@@ -111,15 +111,15 @@ This MCP server supports both ClickHouse and chDB. You can enable either or both
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "mcp-clickhouse",
+        "mcp-clickhouse-lite",
         "--python",
         "3.10",
-        "mcp-clickhouse"
+        "mcp-clickhouse-lite"
       ],
       "env": {
         "CLICKHOUSE_HOST": "<clickhouse-host>",
@@ -144,15 +144,15 @@ Or, if you'd like to try it out with the [ClickHouse SQL Playground](https://sql
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "mcp-clickhouse",
+        "mcp-clickhouse-lite",
         "--python",
         "3.10",
-        "mcp-clickhouse"
+        "mcp-clickhouse-lite"
       ],
       "env": {
         "CLICKHOUSE_HOST": "sql-clickhouse.clickhouse.com",
@@ -174,15 +174,15 @@ For chDB (embedded ClickHouse engine), add the following configuration:
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "mcp-clickhouse",
+        "mcp-clickhouse-lite",
         "--python",
         "3.10",
-        "mcp-clickhouse"
+        "mcp-clickhouse-lite"
       ],
       "env": {
         "CHDB_ENABLED": "true",
@@ -199,15 +199,15 @@ You can also enable both ClickHouse and chDB simultaneously:
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "mcp-clickhouse",
+        "mcp-clickhouse-lite",
         "--python",
         "3.10",
-        "mcp-clickhouse"
+        "mcp-clickhouse-lite"
       ],
       "env": {
         "CLICKHOUSE_HOST": "<clickhouse-host>",
@@ -236,12 +236,12 @@ If you prefer to use the system Python installation instead of uv, you can insta
 
 1. Install the package using pip:
    ```bash
-   python3 -m pip install mcp-clickhouse
+   python3 -m pip install mcp-clickhouse-lite
    ```
 
    To upgrade to the latest version:
    ```bash
-   python3 -m pip install --upgrade mcp-clickhouse
+   python3 -m pip install --upgrade mcp-clickhouse-lite
    ```
 
 2. Update your Claude Desktop configuration to use Python directly:
@@ -249,11 +249,11 @@ If you prefer to use the system Python installation instead of uv, you can insta
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "python3",
       "args": [
         "-m",
-        "mcp_clickhouse.main"
+        "mcp_clickhouse_lite.main"
       ],
       "env": {
         "CLICKHOUSE_HOST": "<clickhouse-host>",
@@ -275,8 +275,8 @@ Alternatively, you can use the installed script directly:
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
-      "command": "mcp-clickhouse",
+    "mcp-clickhouse-lite": {
+      "command": "mcp-clickhouse-lite",
       "env": {
         "CLICKHOUSE_HOST": "<clickhouse-host>",
         "CLICKHOUSE_PORT": "<clickhouse-port>",
@@ -292,9 +292,9 @@ Alternatively, you can use the installed script directly:
 }
 ```
 
-Note: Make sure to use the full path to the Python executable or the `mcp-clickhouse` script if they are not in your system PATH. You can find the paths using:
+Note: Make sure to use the full path to the Python executable or the `mcp-clickhouse-lite` script if they are not in your system PATH. You can find the paths using:
 - `which python3` for the Python executable
-- `which mcp-clickhouse` for the installed script
+- `which mcp-clickhouse-lite` for the installed script
 
 ## Development
 
@@ -313,15 +313,15 @@ CLICKHOUSE_PASSWORD=clickhouse
 
 3. Run `uv sync` to install the dependencies. To install `uv` follow the instructions [here](https://docs.astral.sh/uv/). Then do `source .venv/bin/activate`.
 
-4. For easy testing with the MCP Inspector, run `fastmcp dev mcp_clickhouse/mcp_server.py` to start the MCP server.
+4. For easy testing with the MCP Inspector, run `fastmcp dev mcp_clickhouse_lite/mcp_server.py` to start the MCP server.
 
 5. To test with HTTP transport and the health check endpoint:
    ```bash
    # For development, disable authentication
-   CLICKHOUSE_MCP_SERVER_TRANSPORT=http CLICKHOUSE_MCP_AUTH_DISABLED=true python -m mcp_clickhouse.main
+   CLICKHOUSE_MCP_SERVER_TRANSPORT=http CLICKHOUSE_MCP_AUTH_DISABLED=true python -m mcp_clickhouse_lite.main
 
    # Or with authentication (generate a token first)
-   CLICKHOUSE_MCP_SERVER_TRANSPORT=http CLICKHOUSE_MCP_AUTH_TOKEN="your-token" python -m mcp_clickhouse.main
+   CLICKHOUSE_MCP_SERVER_TRANSPORT=http CLICKHOUSE_MCP_AUTH_TOKEN="your-token" python -m mcp_clickhouse_lite.main
 
    # Then in another terminal:
    # Without auth (if disabled):
@@ -492,15 +492,15 @@ You can set these variables in your environment, in a `.env` file, or in the Cla
 ```json
 {
   "mcpServers": {
-    "mcp-clickhouse": {
+    "mcp-clickhouse-lite": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "mcp-clickhouse",
+        "mcp-clickhouse-lite",
         "--python",
         "3.10",
-        "mcp-clickhouse"
+        "mcp-clickhouse-lite"
       ],
       "env": {
         "CLICKHOUSE_HOST": "<clickhouse-host>",

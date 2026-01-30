@@ -1,7 +1,7 @@
 [project]
-name = "mcp-clickhouse"
+name = "mcp-clickhouse-lite"
 version = "0.2.0"
-description = "An MCP server for ClickHouse."
+description = "An MCP server for ClickHouse (lite version)."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -16,10 +16,10 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-clickhouse = "mcp_clickhouse.main:main"
+mcp-clickhouse-lite = "mcp_clickhouse_lite.main:main"
 
 [project.urls]
-Home = "https://github.com/ClickHouse/mcp-clickhouse"
+Home = "https://github.com/arkhn/mcp-clickhouse-lite"
 
 [project.optional-dependencies]
 dev = [
@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["mcp_clickhouse"]
+packages = ["mcp_clickhouse_lite"]
 
 [tool.ruff]
 line-length = 100

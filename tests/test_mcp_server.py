@@ -3,7 +3,7 @@ import pytest_asyncio
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 import asyncio
-from mcp_clickhouse.mcp_server import mcp, create_clickhouse_client
+from mcp_clickhouse_lite.mcp_server import mcp, create_clickhouse_client
 from dotenv import load_dotenv
 import json
 
