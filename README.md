@@ -1,10 +1,6 @@
-# ClickHouse MCP Server
+# ClickHouse MCP Server (Lite)
 
-[![PyPI - Version](https://img.shields.io/pypi/v/mcp-clickhouse)](https://pypi.org/project/mcp-clickhouse)
-
-An MCP server for ClickHouse.
-
-<a href="https://glama.ai/mcp/servers/yvjy4csvo1"><img width="380" height="200" src="https://glama.ai/mcp/servers/yvjy4csvo1/badge" alt="mcp-clickhouse MCP server" /></a>
+A lighter version of the [ClickHouse MCP Server](https://github.com/ClickHouse/mcp-clickhouse).
 
 ## Features
 
@@ -528,12 +524,9 @@ Note: The bind host and port settings are only used when transport is set to "ht
 uv sync --all-extras --dev # install dev dependencies
 uv run ruff check . # run linting
 
-docker compose up -d test_services # start ClickHouse
-uv run pytest -v tests
-uv run pytest -v tests/test_tool.py # ClickHouse only
-uv run pytest -v tests/test_chdb_tool.py # chDB only
+docker compose -f test-services/docker-compose.yml up -d # start ClickHouse
+uv run --env-file .env -- pytest -v tests
+uv run --env-file .env -- pytest -v tests/test_tool.py # ClickHouse only
+uv run --env-file .env -- pytest -v tests/test_chdb_tool.py # chDB only
 ```
 
-## YouTube Overview
-
-[![YouTube](http://i.ytimg.com/vi/y9biAm_Fkqw/hqdefault.jpg)](https://www.youtube.com/watch?v=y9biAm_Fkqw)
