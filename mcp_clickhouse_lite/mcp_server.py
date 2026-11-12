@@ -24,24 +24,24 @@ from mcp_clickhouse_lite.mcp_env import get_config, get_chdb_config, get_mcp_con
 from mcp_clickhouse_lite.chdb_prompt import CHDB_PROMPT
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 
-# Multi-tenant access control (arkhn/assistant#3692): one ClickHouse login (this server's
-# CLICKHOUSE_USER) holds several ROLEs with different GRANTs, activated per-request via this
-# header — never a tool argument, so the calling LLM can neither see nor set it. Unknown or
-# missing values fall back to the least-privileged role (fail closed, not fail open).
+# Multi-tenant access control (originally arkhn/assistant#3692): one ClickHouse login (this
+# server's CLICKHOUSE_USER) can hold several ROLEs with different GRANTs, activated per-request
+# via this header — never a tool argument, so the calling LLM can neither see nor set it.
+# Accepted role names and the fallback are deployment config (CLICKHOUSE_MCP_ACCEPTED_ROLES /
+# CLICKHOUSE_MCP_DEFAULT_ROLE in mcp_env.py) — this module knows nothing about any specific role.
 CLICKHOUSE_ROLE_HEADER = "X-Clickhouse-Role"
-PILOTAGE_ROLE_PUBLIC = "pilotage_public"
-PILOTAGE_ROLE_DRH = "pilotage_drh"
-_KNOWN_PILOTAGE_ROLES = {PILOTAGE_ROLE_PUBLIC, PILOTAGE_ROLE_DRH}
 
 
-def resolve_role() -> str:
+def resolve_role() -> Optional[str]:
     """Resolve which ClickHouse ROLE to activate for the current request.
 
-    Reads it from the current HTTP request's headers (set by the trusted backend, not by
-    the agent/LLM) and defaults to the least-privileged role on anything unexpected.
+    Reads it from the current HTTP request's headers (set by the trusted backend, not by the
+    agent/LLM) and falls back to the configured default ROLE (possibly none) on anything
+    unexpected — fail closed, not fail open.
     """
-    role = get_http_headers().get(PILOTAGE_ROLE_HEADER.lower())
-    return role if role in _KNOWN_PILOTAGE_ROLES else PILOTAGE_ROLE_PUBLIC
+    role = get_http_headers().get(CLICKHOUSE_ROLE_HEADER.lower())
+    config = get_mcp_config()
+    return role if role in config.accepted_roles else config.default_role
 
 
 @dataclass
@@ -163,7 +163,7 @@ def to_json(obj: Any) -> str:
 def list_databases():
     """List available ClickHouse databases"""
     logger.info("Listing all databases")
-    client = create_clickhouse_client(role=resolve_pilotage_role())
+    client = create_clickhouse_client(role=resolve_role())
     result = client.command("SHOW DATABASES")
 
     # Convert newline-separated string to list and trim whitespace
@@ -312,7 +312,7 @@ def list_tables(
         page_token,
         page_size,
     )
-    client = create_clickhouse_client(role=resolve_pilotage_role())
+    client = create_clickhouse_client(role=resolve_role())
 
     if page_token and page_token in table_pagination_cache:
         cached_state = table_pagination_cache[page_token]
@@ -410,7 +410,7 @@ def run_select_query(query: str):
         # Resolved here, in the request's own thread: concurrent.futures.ThreadPoolExecutor
         # workers don't inherit contextvars, so get_http_headers() (and thus the role) would
         # silently read as empty inside execute_query if resolved there instead.
-        role = resolve_pilotage_role()
+        role = resolve_role()
         future = QUERY_EXECUTOR.submit(execute_query, query, role)
         try:
             timeout_secs = get_mcp_config().query_timeout
