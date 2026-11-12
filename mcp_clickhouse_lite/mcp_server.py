@@ -34,7 +34,7 @@ PILOTAGE_ROLE_DRH = "pilotage_drh"
 _KNOWN_PILOTAGE_ROLES = {PILOTAGE_ROLE_PUBLIC, PILOTAGE_ROLE_DRH}
 
 
-def resolve_pilotage_role() -> str:
+def resolve_role() -> str:
     """Resolve which ClickHouse ROLE to activate for the current request.
 
     Reads it from the current HTTP request's headers (set by the trusted backend, not by
