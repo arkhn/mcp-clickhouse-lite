@@ -28,7 +28,7 @@ from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
 # CLICKHOUSE_USER) holds several ROLEs with different GRANTs, activated per-request via this
 # header — never a tool argument, so the calling LLM can neither see nor set it. Unknown or
 # missing values fall back to the least-privileged role (fail closed, not fail open).
-PILOTAGE_ROLE_HEADER = "X-Pilotage-Role"
+CLICKHOUSE_ROLE_HEADER = "X-Clickhouse-Role"
 PILOTAGE_ROLE_PUBLIC = "pilotage_public"
 PILOTAGE_ROLE_DRH = "pilotage_drh"
 _KNOWN_PILOTAGE_ROLES = {PILOTAGE_ROLE_PUBLIC, PILOTAGE_ROLE_DRH}
