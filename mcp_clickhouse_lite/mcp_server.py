@@ -15,6 +15,7 @@ from cachetools import TTLCache
 from fastmcp.tools import Tool
 from fastmcp.prompts import Prompt
 from fastmcp.exceptions import ToolError
+from fastmcp.server.dependencies import get_http_headers
 from dataclasses import dataclass, field, asdict, is_dataclass
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
@@ -22,6 +23,25 @@ from starlette.responses import PlainTextResponse
 from mcp_clickhouse_lite.mcp_env import get_config, get_chdb_config, get_mcp_config, TransportType
 from mcp_clickhouse_lite.chdb_prompt import CHDB_PROMPT
 from fastmcp.server.auth.providers.jwt import StaticTokenVerifier
+
+# Multi-tenant access control (originally arkhn/assistant#3692): one ClickHouse login (this
+# server's CLICKHOUSE_USER) can hold several ROLEs with different GRANTs, activated per-request
+# via this header — never a tool argument, so the calling LLM can neither see nor set it.
+# Accepted role names and the fallback are deployment config (CLICKHOUSE_MCP_ACCEPTED_ROLES /
+# CLICKHOUSE_MCP_DEFAULT_ROLE in mcp_env.py) — this module knows nothing about any specific role.
+CLICKHOUSE_ROLE_HEADER = "X-Clickhouse-Role"
+
+
+def resolve_role() -> Optional[str]:
+    """Resolve which ClickHouse ROLE to activate for the current request.
+
+    Reads it from the current HTTP request's headers (set by the trusted backend, not by the
+    agent/LLM) and falls back to the configured default ROLE (possibly none) on anything
+    unexpected — fail closed, not fail open.
+    """
+    role = get_http_headers().get(CLICKHOUSE_ROLE_HEADER.lower())
+    config = get_mcp_config()
+    return role if role in config.accepted_roles else config.default_role
 
 
 @dataclass
@@ -143,7 +163,7 @@ def to_json(obj: Any) -> str:
 def list_databases():
     """List available ClickHouse databases"""
     logger.info("Listing all databases")
-    client = create_clickhouse_client()
+    client = create_clickhouse_client(role=resolve_role())
     result = client.command("SHOW DATABASES")
 
     # Convert newline-separated string to list and trim whitespace
@@ -292,7 +312,7 @@ def list_tables(
         page_token,
         page_size,
     )
-    client = create_clickhouse_client()
+    client = create_clickhouse_client(role=resolve_role())
 
     if page_token and page_token in table_pagination_cache:
         cached_state = table_pagination_cache[page_token]
@@ -371,8 +391,8 @@ def list_tables(
     }
 
 
-def execute_query(query: str):
-    client = create_clickhouse_client()
+def execute_query(query: str, role: str | None = None):
+    client = create_clickhouse_client(role=role)
     try:
         read_only = get_readonly_setting(client)
         res = client.query(query, settings={"readonly": read_only})
@@ -387,7 +407,11 @@ def run_select_query(query: str):
     """Run a SELECT query in a ClickHouse database"""
     logger.info(f"Executing SELECT query: {query}")
     try:
-        future = QUERY_EXECUTOR.submit(execute_query, query)
+        # Resolved here, in the request's own thread: concurrent.futures.ThreadPoolExecutor
+        # workers don't inherit contextvars, so get_http_headers() (and thus the role) would
+        # silently read as empty inside execute_query if resolved there instead.
+        role = resolve_role()
+        future = QUERY_EXECUTOR.submit(execute_query, query, role)
         try:
             timeout_secs = get_mcp_config().query_timeout
             result = future.result(timeout=timeout_secs)
@@ -412,11 +436,13 @@ def run_select_query(query: str):
         raise RuntimeError(f"Unexpected error during query execution: {str(e)}")
 
 
-def create_clickhouse_client():
+def create_clickhouse_client(role: str | None = None):
     client_config = get_config().get_client_config()
+    if role:
+        client_config.setdefault("settings", {})["role"] = role
     logger.info(
         f"Creating ClickHouse client connection to {client_config['host']}:{client_config['port']} "
-        f"as {client_config['username']} "
+        f"as {client_config['username']} (role={role}) "
         f"(secure={client_config['secure']}, verify={client_config['verify']}, "
         f"connect_timeout={client_config['connect_timeout']}s, "
         f"send_receive_timeout={client_config['send_receive_timeout']}s)"

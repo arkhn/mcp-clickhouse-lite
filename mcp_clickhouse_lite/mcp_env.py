@@ -274,6 +274,11 @@ class MCPServerConfig:
             unless CLICKHOUSE_MCP_AUTH_DISABLED=true)
         CLICKHOUSE_MCP_AUTH_DISABLED: Disable authentication (default: false, use
             only for development)
+        CLICKHOUSE_MCP_ACCEPTED_ROLES: Comma-separated ROLE names a caller may activate per
+            request via the X-Clickhouse-Role header (default: none accepted)
+        CLICKHOUSE_MCP_DEFAULT_ROLE: ROLE to activate when the header is absent or not in
+            CLICKHOUSE_MCP_ACCEPTED_ROLES (default: none — no ROLE is set, so ClickHouse falls
+            back to the connecting user's own default ROLE)
     """
 
     @property
@@ -305,6 +310,17 @@ class MCPServerConfig:
     def auth_disabled(self) -> bool:
         """Get whether authentication is disabled."""
         return os.getenv("CLICKHOUSE_MCP_AUTH_DISABLED", "false").lower() == "true"
+
+    @property
+    def accepted_roles(self) -> frozenset[str]:
+        """Get the ROLE names a caller may activate via the per-request header."""
+        raw = os.getenv("CLICKHOUSE_MCP_ACCEPTED_ROLES", "")
+        return frozenset(name.strip() for name in raw.split(",") if name.strip())
+
+    @property
+    def default_role(self) -> Optional[str]:
+        """Get the ROLE to activate when the header is absent or not accepted."""
+        return os.getenv("CLICKHOUSE_MCP_DEFAULT_ROLE")
 
 
 _MCP_CONFIG_INSTANCE = None
